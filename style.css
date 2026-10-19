@@ -1,0 +1,852 @@
+/* ============================================================
+   BAR ARRAY · vintage CRT panel
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap');
+
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root {
+  /* palette */
+  --orange:       #e05a33;
+  --orange-dark:  #b84322;
+  --ink:          #1a1a1a;
+  --ink-soft:     #2a2a2a;
+  --paper:        #e8e6e1;
+  --paper-dark:   #d4d1ca;
+  --paper-darker: #bfbbb2;
+  --line:         #c0bdb6;
+
+  /* channel accent (overridden by JS) */
+  --ch-accent:      var(--orange);
+  --ch-accent-dark: var(--orange-dark);
+
+  /* bar states */
+  --bar-idle:      var(--ch-accent);
+  --bar-highlight: #f5c542;
+  --bar-found:     #4caf50;
+  --bar-found-dk:  #2e7d32;
+  --bar-excluded:  #9e9e9e;
+  --bar-excluded-dk: #666;
+
+  /* typography */
+  --font-ui:   'Inter', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+
+  /* geometry */
+  --radius:     0px;
+  --border-w:   2px;
+  --shadow-sm:  2px 2px 0 rgba(0, 0, 0, 0.15);
+  --shadow-md:  3px 3px 0 var(--ink);
+  --shadow-lg:  6px 6px 0 var(--ink);
+  --shadow-xl:  9px 9px 0 var(--ink);
+
+  /* motion */
+  --ease-out:   cubic-bezier(0.2, 0.9, 0.4, 1);
+  --dur-fast:   0.12s;
+  --dur-mid:    0.22s;
+  --dur-slow:   0.42s;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================================
+   BODY · backdrop
+   ============================================================ */
+body {
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(0, 0, 0, 0.06) 0%, transparent 30%),
+    radial-gradient(circle at 80% 70%, rgba(224, 90, 51, 0.04) 0%, transparent 35%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 3vw, 2rem) clamp(0.75rem, 2vw, 1rem);
+  font-family: var(--font-ui);
+  color: var(--ink);
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* dot grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(26, 26, 26, 0.12) 1px, transparent 1px);
+  background-size: 6px 6px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+}
+
+/* film grain */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: multiply;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.main-container {
+  max-width: 1300px;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  justify-content: center;
+  align-items: stretch;
+  z-index: 5;
+  position: relative;
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card {
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  padding: clamp(1.25rem, 3vw, 1.8rem) clamp(1rem, 2.5vw, 1.6rem) clamp(1rem, 2.5vw, 1.6rem);
+  flex: 1 1 420px;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before,
+.card::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--ch-accent);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.card::before {
+  top: 8px; left: 8px;
+  border-width: 2px 0 0 2px;
+}
+
+.card::after {
+  bottom: 8px; right: 8px;
+  border-width: 0 2px 2px 0;
+}
+
+.card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-xl), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================
+   HEADINGS
+   ============================================================ */
+h2 {
+  font-family: var(--font-ui);
+  font-weight: 900;
+  font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--ink);
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+  padding-bottom: 0.6rem;
+  border-bottom: var(--border-w) solid var(--ink);
+  line-height: 1;
+  position: relative;
+}
+
+.array-panel h2::before {
+  content: "▦";
+  color: var(--ch-accent);
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: color var(--dur-slow) var(--ease-out);
+}
+
+h2 .code {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.6rem;
+  background: var(--ch-accent);
+  color: var(--paper);
+  border: 1.5px solid var(--ink);
+  margin-left: auto;
+  text-transform: uppercase;
+  transition: background var(--dur-slow) var(--ease-out);
+}
+
+/* ============================================================
+   DISPLAY AREA · CRT screen
+   ============================================================ */
+.display-area {
+  background: var(--ink);
+  border: var(--border-w) solid var(--ink);
+  padding: 1.4rem 1rem;
+  margin: 1.2rem 0 1.4rem;
+  min-height: clamp(200px, 30vh, 260px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  font-family: var(--font-mono);
+  transition: box-shadow var(--dur-mid);
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    4px 4px 0 var(--ch-accent);
+}
+
+/* scanlines */
+.display-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(232, 230, 225, 0.03) 0px,
+    rgba(232, 230, 225, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* dot matrix */
+.display-area > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* empty state */
+.empty-message {
+  color: rgba(232, 230, 225, 0.4);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  padding: 1rem 1.5rem;
+  border: 1px dashed rgba(232, 230, 225, 0.25);
+  text-transform: uppercase;
+  align-self: center;
+}
+
+/* ============================================================
+   BARS
+   ============================================================ */
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 54px;
+  flex-shrink: 0;
+  transition: transform var(--dur-mid) var(--ease-out);
+}
+
+.bar {
+  width: 48px;
+  background: var(--bar-idle);
+  border: var(--border-w) solid var(--paper);
+  border-radius: var(--radius);
+  transition:
+    height var(--dur-mid) var(--ease-out),
+    background-color var(--dur-slow) var(--ease-out),
+    box-shadow var(--dur-mid),
+    transform var(--dur-mid) var(--ease-out);
+  box-shadow: var(--shadow-sm);
+  min-height: 8px;
+  position: relative;
+}
+
+.bar.highlight {
+  background: var(--bar-highlight);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ch-accent), var(--shadow-md);
+  transform: scaleX(1.06);
+}
+
+.bar.found {
+  background: var(--bar-found);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--bar-found-dk), var(--shadow-md);
+  transform: scaleX(1.06);
+}
+
+.bar.not-found {
+  background: var(--bar-excluded);
+  opacity: 0.55;
+  border-color: var(--bar-excluded-dk);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.bar-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--paper);
+  background: var(--ink);
+  padding: 0.15rem 0.55rem;
+  border: 1.5px solid var(--ch-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+  transition: border-color var(--dur-slow) var(--ease-out);
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  border: var(--border-w) solid var(--ink);
+  background: var(--paper);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast), transform var(--dur-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: var(--shadow-sm);
+}
+
+.input-group input:focus {
+  border-color: var(--ch-accent);
+  box-shadow: 3px 3px 0 var(--ch-accent);
+  transform: translate(-1px, -1px);
+}
+
+.input-group input::placeholder {
+  color: rgba(26, 26, 26, 0.4);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+button {
+  background: var(--paper);
+  border: var(--border-w) solid var(--ink);
+  padding: 0.75rem 1.1rem;
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all var(--dur-fast) var(--ease-out);
+  color: var(--ink);
+  text-transform: uppercase;
+  font-family: var(--font-ui);
+  box-shadow: var(--shadow-md);
+  flex: 1 0 auto;
+  position: relative;
+  border-radius: var(--radius);
+}
+
+button:hover:not(:disabled) {
+  background: var(--ch-accent);
+  color: var(--paper);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+button.primary {
+  background: var(--ch-accent);
+  color: var(--paper);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--ch-accent-dark);
+}
+
+button.warning {
+  background: var(--paper-dark);
+}
+
+button.warning:hover:not(:disabled) {
+  background: var(--paper-darker);
+  color: var(--ink);
+}
+
+/* ============================================================
+   CHANNEL BUTTON · TV dial
+   ============================================================ */
+.channel-btn {
+  gap: 0.6rem;
+  background: var(--ch-accent);
+  color: var(--paper);
+  transition: background var(--dur-mid) var(--ease-out);
+}
+
+.channel-btn:hover:not(:disabled) {
+  background: var(--ch-accent-dark);
+  color: var(--paper);
+}
+
+.channel-btn .ch-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.45rem;
+  background: var(--ink);
+  color: var(--ch-accent);
+  border: 1.5px solid var(--ch-accent);
+  transition: color var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out);
+}
+
+.channel-btn .ch-name {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.channel-btn .ch-arrow {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  transition: transform var(--dur-mid) var(--ease-out);
+}
+
+.channel-btn:active:not(:disabled) .ch-arrow {
+  transform: translateX(3px);
+}
+
+.channel-btn.tuning {
+  animation: chTune var(--dur-slow) ease;
+}
+
+@keyframes chTune {
+  0%   { transform: translate(0, 0) rotate(0); }
+  25%  { transform: translate(-2px, 1px) rotate(-1deg); }
+  50%  { transform: translate(2px, -1px) rotate(1deg); }
+  75%  { transform: translate(-1px, 1px) rotate(-0.5deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+/* ============================================================
+   CRT FLICKER · tuning transition
+   ============================================================ */
+.display-area.crt-flicker {
+  animation: crtSweep var(--dur-slow) ease-out;
+}
+
+.display-area.crt-flicker::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.08) 0px,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  animation: crtFlicker var(--dur-slow) steps(12) forwards;
+}
+
+.display-area.crt-flicker::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 11;
+  background: rgba(255, 255, 255, 0.85);
+  mix-blend-mode: screen;
+  animation: crtWhiteFlash var(--dur-slow) ease-out forwards;
+}
+
+@keyframes crtFlicker {
+  0%   { opacity: 1;    transform: scaleY(1); }
+  10%  { opacity: 0.4;  transform: scaleY(0.02); }
+  20%  { opacity: 0.9;  transform: scaleY(1.02); }
+  30%  { opacity: 0.3; }
+  45%  { opacity: 0.8;  transform: scaleY(0.98); }
+  60%  { opacity: 0.4; }
+  80%  { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@keyframes crtWhiteFlash {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.9; }
+  16%  { opacity: 0.1; }
+  30%  { opacity: 0.6; }
+  50%  { opacity: 0.15; }
+  100% { opacity: 0; }
+}
+
+@keyframes crtSweep {
+  0%   { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 4px 4px 0 var(--ch-accent); }
+  50%  { box-shadow: inset 0 0 40px rgba(255,255,255,0.35), 4px 4px 0 var(--ch-accent); }
+  100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 4px 4px 0 var(--ch-accent); }
+}
+
+/* ============================================================
+   LEGEND
+   ============================================================ */
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  margin-top: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  opacity: 0.8;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 20px;
+  height: 14px;
+  border: 1.5px solid var(--ink);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius);
+}
+
+.legend-swatch.idle      { background: var(--bar-idle); }
+.legend-swatch.highlight { background: var(--bar-highlight); }
+.legend-swatch.found     { background: var(--bar-found); }
+.legend-swatch.not-found { background: var(--bar-excluded); opacity: 0.6; }
+
+/* ============================================================
+   ACTION ROW
+   ============================================================ */
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ============================================================
+   META INFO + BADGE
+   ============================================================ */
+.meta-info {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: var(--paper-dark);
+  padding: 0.6rem 1rem;
+  border: var(--border-w) solid var(--ink);
+  text-transform: uppercase;
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-op {
+  background: var(--ink);
+  padding: 0.2rem 0.7rem;
+  font-weight: 800;
+  color: var(--ch-accent);
+  border: 1.5px solid var(--ch-accent);
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  font-family: var(--font-mono);
+  transition: color var(--dur-slow) var(--ease-out), border-color var(--dur-slow) var(--ease-out);
+  white-space: nowrap;
+}
+
+.badge-op.is-sorted {
+  color: var(--bar-found);
+  border-color: var(--bar-found);
+}
+
+/* ============================================================
+   STATUS MESSAGE
+   ============================================================ */
+.status-message {
+  margin-top: 0.8rem;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.7rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: var(--border-w) solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ch-accent);
+  text-transform: uppercase;
+  min-height: 2.6rem;
+  display: flex;
+  align-items: center;
+  transition: box-shadow var(--dur-slow) var(--ease-out);
+}
+
+.status-message span {
+  color: var(--ch-accent);
+  font-weight: 800;
+  transition: color var(--dur-slow) var(--ease-out);
+}
+
+/* ============================================================
+   DECOR · tech label · crosshair · target circle
+   ============================================================ */
+.tech-label {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--ink);
+  opacity: 0.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.array-panel .tech-label {
+  top: 70px;
+  right: 16px;
+  writing-mode: vertical-rl;
+}
+
+.card .target-circle {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: var(--border-w) solid var(--ch-accent);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.15;
+  transition: border-color var(--dur-slow) var(--ease-out);
+}
+
+.array-panel .target-circle {
+  top: 20px;
+  right: 20px;
+}
+
+.card .target-circle::before {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid var(--ch-accent);
+  border-radius: 50%;
+}
+
+.card .target-circle::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: var(--ch-accent);
+  border-radius: 50%;
+}
+
+.card .crosshair {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: var(--ch-accent);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.array-panel .crosshair {
+  top: 55%;
+  left: 0;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer-note {
+  margin-top: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink);
+  text-align: center;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  z-index: 5;
+  position: relative;
+  border-top: var(--border-w) solid var(--ink);
+  padding-top: 1rem;
+  width: 100%;
+  max-width: 900px;
+  opacity: 0.6;
+}
+
+.footer-note span {
+  color: var(--ch-accent);
+  font-weight: 800;
+  transition: color var(--dur-slow) var(--ease-out);
+}
+
+/* ============================================================
+   UTILITY ANIMATIONS
+   ============================================================ */
+.pulse { animation: pulse 0.35s ease; }
+@keyframes pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.04); }
+  70%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.shake { animation: shake 0.3s ease; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  50%      { transform: translateX(6px); }
+  75%      { transform: translateX(-3px); }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 700px) {
+  .bar        { width: 32px; }
+  .bar-wrapper{ min-width: 38px; }
+  .bar-label  { font-size: 0.7rem; padding: 0.1rem 0.4rem; }
+  button      { font-size: 0.7rem; padding: 0.6rem 0.8rem; }
+  .display-area { gap: 0.6rem; min-height: 180px; }
+  .meta-info  { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+  h2 .code    { font-size: 0.55rem; }
+}
+
+@media (max-width: 480px) {
+  .legend-row { gap: 0.8rem; font-size: 0.6rem; }
+  .input-group { flex-direction: column; }
+  .input-group input,
+  .input-group button { width: 100%; flex: 0 0 auto; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .card:hover { transform: none; }
+
+  /* ============================================================
+   SORT CHANNEL DIAL
+   ============================================================ */
+.channel-dial {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0.2rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--paper-dark);
+  border: var(--border-w) solid var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.dial-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  opacity: 0.7;
+  padding-right: 0.3rem;
+  border-right: 1.5px solid var(--ink);
+}
+
+.dial-btn {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+.channel-btn {
+  flex: 1 1 auto;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+
+}

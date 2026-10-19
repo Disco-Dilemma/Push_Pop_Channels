@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAR ARRAY · vintage panel · search &amp; sort channel dial</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="main-container">
+
+    <!-- ==================== MEGA MAIN ==================== -->
+    <div class="card array-panel">
+      <div class="target-circle"></div>
+      <div class="crosshair"></div>
+      <div class="tech-label">BAR-ARRAY // v.02</div>
+
+      <h2>
+        ▦ BAR ARRAY
+        <span class="code" id="sortCode">BUB · SORT</span>
+      </h2>
+
+      <!-- ==================== CHANNEL DIAL ==================== -->
+      <div class="channel-dial" role="group" aria-label="Sorting method channel selector">
+        <span class="dial-label">SORT CH</span>
+        <button id="chanPrevBtn" class="dial-btn" title="Previous sort channel">◀</button>
+        <button id="channelBtn" class="channel-btn" title="Switch sorting method">
+          <span class="ch-label" id="chLabel">CH 01</span>
+          <span class="ch-name" id="chName">BUBBLE</span>
+          <span class="ch-arrow">▶</span>
+        </button>
+        <button id="chanNextBtn" class="dial-btn" title="Next sort channel">▶</button>
+      </div>
+
+      <div id="barContainer" class="display-area scan">
+      </div>
+
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-swatch idle"></div> idle</div>
+        <div class="legend-item"><div class="legend-swatch highlight"></div> compared</div>
+        <div class="legend-item"><div class="legend-swatch found"></div> found</div>
+        <div class="legend-item"><div class="legend-swatch not-found"></div> excluded</div>
+      </div>
+
+      <div class="input-group" style="margin-top:1rem;">
+        <input type="number" id="searchInput" value="7" step="1" placeholder="SEARCH VALUE">
+        <button id="linearSearchBtn" title="Linear Search">Linear</button>
+        <button id="binarySearchBtn" title="Binary Search (sorted)">Binary</button>
+      </div>
+
+      <div class="input-group">
+        <input type="number" id="addInput" value="12" step="1" placeholder="NEW VALUE">
+        <button id="addBtn" class="primary">Add</button>
+      </div>
+
+      <div class="action-row">
+        <button id="sortBtn" class="primary" title="Run the currently selected sort">
+          🫧 Run Sort
+        </button>
+        <button id="resetBtn" class="warning" title="Reset array">↺ Reset</button>
+      </div>
+
+      <div id="statusMessage" class="status-message">
+        ⚡ READY · SELECT AN OPERATION
+      </div>
+
+      <div class="meta-info">
+        <span id="arraySizeBadge">08 ELEMENTS</span>
+        <span class="badge-op">CASSETTE CLICK · ON</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <span>◉</span> BAR ARRAY · LINEAR · BINARY · BUBBLE · SELECTION · MERGE <span>◉</span>
+  </div>
+
+  <script src="gears.js"></script>
+</body>
+</html>
